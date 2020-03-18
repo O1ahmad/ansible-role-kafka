@@ -1,7 +1,5 @@
 title "Kafka service launch test suite"
 
-require 'rspec/retry'
-
 describe file('/etc/systemd/system/kafka.service') do
   it { should exist }
   its('owner') { should eq 'root' }
@@ -14,6 +12,32 @@ describe service('kafka') do
   it { should be_installed }
   it { should be_enabled }
   it { should be_running }
+end
+
+describe port(9092) do
+  before do
+    30.times do
+      unless port(9092).listening?
+        puts "Port 9092 isn't ready, retrying.."
+        sleep 1
+      end
+    end
+  end
+  it { should be_listening }
+  its('protocols') { should cmp 'tcp' }
+end
+
+describe port(9999) do
+  before do
+    30.times do
+      unless port(9999).listening?
+        puts "Port 9999 isn't ready, retrying.."
+        sleep 1
+      end
+    end
+  end
+  it { should be_listening }
+  its('protocols') { should cmp 'tcp' }
 end
 
 describe command('/opt/kafka/bin/kafka-topics.sh --create --topic test ' \
