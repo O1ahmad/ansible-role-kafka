@@ -46,44 +46,30 @@ Variables are available and organized according to the following software & mach
 
 #### Install
 
-`elasticsearch`can be installed using OS package management systems (e.g `apt`, `yum`) or compressed archives (`.tar`, `.zip`) downloaded and extracted from various sources.
+`kafka`can be installed using compressed archives (`.tar`, `.zip`) downloaded and extracted from various sources.
 
 _The following variables can be customized to control various aspects of this installation process, ranging from software version and source location of binaries to the installation directory where they are stored:_
 
-`elasticsearch_user: <service-user-name>` (**default**: *elasticsearch*)
-- dedicated service user and group used by `elasticsearch` for privilege separation (see [here](https://www.beyondtrust.com/blog/entry/how-separation-privilege-improves-security) for details)
+`kafka_user: <service-user-name>` (**default**: *kafka*)
+- dedicated service user and group used by `kafka` for privilege separation (see [here](https://www.beyondtrust.com/blog/entry/how-separation-privilege-improves-security) for details)
 
-`install_type: <package | archive>` (**default**: archive)
-- **package**: supported by Debian and Redhat distributions, package installation of Elasticsearch pulls the specified package from the respective package management repository.
-  - Note that the installation directory is determined by the package management system and currently defaults to `/usr/share` for both distros. Attempts to set and execute a package installation on other Linux distros will result in failure due to lack of support.
-- **archive**: compatible with both **tar and zip** formats, archived installation binaries can be obtained from local and remote compressed archives either from the official [download/releases](https://www.elastic.co/downloads/elasticsearch) site or those generated from development/custom sources.
+`install_type: <string (*currently ONLY -archive- is supported)*>` (**default**: archive)
+- **archive**: compatible with both **tar and zip** formats, archived installation binaries can be obtained from local and remote compressed archives either from the official [download/releases](https://kafka.apache.org/downloads) site or those generated from development/custom sources.
 
-`install_dir: </path/to/installation/dir>` (**default**: `/opt/elasticsearch`)
-- path on target host where the `elasticsearch` binaries should be extracted to.
+`kafka_home: </path/to/dir>` (**default**: `/opt/kafka`)
+- path on target host where the `kafka` binaries should be extracted to.
 
 `archive_url: <path-or-url-to-archive>` (**default**: see `defaults/main.yml`)
-- address of a compressed **tar or zip** archive containing `elasticsearch` binaries. This method technically supports installation of any available version of `elasticsearch`. Links to official versions can be found [here](https://www.elastic.co/downloads/past-releases#elasticsearch).
-
-`archive_checksum: <path-or-url-to-checksum>` (**default**: see `defaults/main.yml`)
-- address of a checksum file for verifying the data integrity of the specified archive. While recommended and generally considered a best practice, specifying a checksum is *not required* and can be disabled by providing an empty string (`''`) for its value.
-
-`package_url: <path-or-url-to-package>` (**default**: see `defaults/main.yml`)
-- address of a **Debian or RPM** package containing `elasticsearch` source and binaries. Note that the installation layout is determined by the package management systems. Consult Elastic's official documentation for both [RPM](https://www.elastic.co/guide/en/elasticsearch/reference/current/rpm.html) and [Debian](https://www.elastic.co/guide/en/elasticsearch/reference/current/deb.html) installation details.
-
-`package_checksum: <path-or-url-to-checksum>` (**default**: see `vars/...`)
-- address of a checksum file for verifying the data integrity of the specified package. While recommended and generally considered a best practice, specifying a checksum is *not required* and can be disabled by providing an empty string (`''`) for its value.
-
-`checksum_format: <string>` (**default**: see `sha512`)
-- hash algorithm used for file verification associated with the specified archive or package checksum. Reference [here](https://en.wikipedia.org/wiki/Cryptographic_hash_function) for more information about checksums/cryptographic hashes.
+- address of a compressed **tar or zip** archive containing `kafka` binaries. This method technically supports installation of any available version of `kafka`. Links to official versions can be found [here](https://kafka.apache.org/downloads).
 
 #### Config
 
-Configuration of `elasticsearch` is expressed within 3 files:
-- `elasticsearch.yml` for configuring Elasticsearch
-- `jvm.options` for configuring Elasticsearch JVM settings
-- `log4j2.properties` for configuring Elasticsearch logging
+Configuration of `kafka` is expressed within 3 files:
+- `server.properties` for configuring operational behavior of a Kafka broker
+- `jvm.options` for configuring Kafka JVM settings
+- `log4j.properties` for configuring Kafka logging
 
-These files are located in the config directory, which as previously mentioned, depends on whether or not the installation is from an archive distribution (tar.gz or zip) or a package distribution (Debian or RPM packages).
+These files are located in a config directory, based on the location set for `kafka_home`.
 
 For additional details and to get an idea how each config should look, reference Elastic's official [configuration](https://www.elastic.co/guide/en/elasticsearch/reference/current/settings.html) documentation.
 
