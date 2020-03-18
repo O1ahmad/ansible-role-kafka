@@ -75,72 +75,72 @@ For additional details and to get an idea how each config should look, reference
 
 _The following variables can be customized to manage the location and content of these configuration files:_
 
-`config_dir: </path/to/configuration/dir>` (**default**: `/opt/elasticsearch/config`)
-- path on target host where the aforementioned configuration files should be stored
-
 `managed_configs: <list of configs to manage>` (**default**: see `defaults/main.yml`)
 - list of configuration files to manage with this Ansible role
 
   Allowed values are any combination of:
-  - `elasticsearch_config`
+  - `server_properties`
   - `jvm_options`
   - `log4j_properties`
 
-`config: <hash-of-elasticsearch-settings>` **default**: {}
+`server_properties: <hash-of-kafka-properties>` **default**: {}
 
-- The configuration file should contain settings which are node-specific (such as *node.name* and *paths*), or settings which a node requires in order to be able to join a cluster.
+* Any configuration setting/value key-pair supported by `kafka` **broker configs** should be expressible within each hash entry and properly rendered within the associated properties file. **Note:** Each `<key>` along with its `<value>` specifications should be written as expected to be rendered within the associated *properties* config (**e.g.** `zookeeper.connect: zk1.cluster.net:2121` or  `advertised.listeners: PLAINTEXT://kafka1.cluster.net:9092`).
 
-Any configuration setting/value key-pair supported by `elasticsearch` should be expressible within the hash and properly rendered within the associated YAML config. Values can be expressed in typical _yaml/ansible_ form (e.g. Strings, numbers and true/false values should be written as is and without quotes).
+##### Example
 
-  Keys of the `config` hash can be either nested or delimited by a '.':
   ```yaml
-  config:
-    node.name: example-node
-    path:
-      logs: /var/log/elasticsearch
+  server_properties:
+    broker.id: 10
+    advertised.host.name: example-broker
   ```
 
-A list of configurable settings can be found [here](https://github.com/elastic/elasticsearch/tree/master/docs/reference/modules).
+A list of configurable settings can be found [here](https://kafka.apache.org/documentation/#brokerconfigs).
 
 `jvm_options: <list-of-dicts>` **default**: `[]`
 
-- The preferred method of setting JVM options (including system properties and JVM flags) is via the *jvm.options* configuration file. The file consists of a line-delimited list of arguments used to modify the behavior of Elasticsearch's JVM.
+- Kafka uses a set of environment variables to manage various aspects of its Java environment - see [here](http://kafka.apache.org/documentation.html#java) for more details. This role exposes management of these environment variables via a *jvm.options* configuration file located in the aforementioned configuration directory under `kafka_home`. The file consists of a line-delimited list of environment variable settings used to modify the behavior of Kafka's JVM.
 
-While you should rarely need to change Java Virtual Machine (JVM) options; there are situations (e.g.insufficient heap size allocation) in which adjustments may be necessary. Each line to be rendered in the file can be expressed as an entry within a list of dicts, contained within `jvm_options`, consisting of a hash composed of an *optional* `comment` field and list of associated arguments to configure:
+While you should rarely need to change Java Virtual Machine (JVM) options; there are situations (e.g.insufficient heap size allocation) in which adjustments may be necessary. Each environment variable to be rendered in the file can be expressed as an entry in the `jvm_options` hash, with a list of dicts as values representing various supported flags/options.
+
+**Note:** The hash keys representing the environment variables responsible for JVM management are not case-sensitive and can be expressed however feels comfortable to the operator.  
+
+##### Example
 
   ```yaml
   jvm_options:
-    - comment: set the min and max JVM heap size (to the same value)
-      arguments:
-        - '-Xms1g'
-        - '-Xmx1g'
+    kafka_heap_opts:
+      - "-Xmx1g -Xms1g"
+    KAFKA_JVM_PERFORMANCE_OPTS:
+      - -server
+      - -XX:+UseConcMarkSweepGC
+      - -Djava.awt.headless=true
+    KAFKA_jmx_OPTS:
+      - -Dcom.sun.management.jmxremote=true
   ```
 
-  A list of available arguments can be found [here](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/java.html).
+ Additional reference can be found [here](https://github.com/apache/kafka/blob/trunk/bin/kafka-run-class.sh#L184).
 
 `log4j_properties: <list-of-dicts>` **default**: `[]`
 
-- Kafka makes use of the Apache [log4j 2](https://logging.apache.org/log4j/2.x/) logging system for organizing and managing each of its main and sub-component logging facilities. As such, individual settings can be applied on a global or per-component basis by defining configuration settings associated with various aspects of the logging process. By default, log4j 2 loads a `log4j2.properties` file which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
+- Kafka makes use of the Apache [log4j](https://logging.apache.org/log4j/2.x/) logging system for organizing and managing each of its main and sub-component logging facilities. As such, individual settings can be applied on a global or per-component basis by defining configuration settings associated with various aspects of the logging process. 
 
-3 properties `${sys:es.logs.base_path}`, `${sys:es.logs.cluster_name}`, and `${sys:es.logs.node_name}` are exposed by Elasticsearch and can be referenced in the configuration file to determine the location of this log file and potentially others. The property **${sys:es.logs.base_path}** will resolve to the log directory, **${sys:es.logs.cluster_name}** will resolve to the cluster name *(used as the prefix of log filenames in the default configuration)*, and **${sys:es.logs.node_name}** will resolve to the node name *(if the node name is explicitly set)*.
+By default, log4j loads a `log4j.properties` file, underneath Kafka's main `{{ kafka_home }}/config/` directory by default, which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
 
 Each line to be rendered in the file can be expressed as an entry within a list of dicts, contained within `log4j_properties`, consisting of a hash containing an *optional* `comment` field and list of associated key-value pairs:
 
   ```yaml
   log4j2_properties:
-    - comment: log action execution errors for easier debugging
+    - comment: Set root logger list
       settings:
-        - logger.action.name: org.elasticsearch.action
-          logger.action.level: debug
+        - log4j.rootLogger: INFO,stdout,kafkaAppender
+    - comment: Define stdout logger appender
+      settings:
+        - log4j.appender.stdout: org.apache.log4j.ConsoleAppender
+        - log4j.appender.stdout.layout: org.apache.log4j.PatternLayout
   ```
 
-Reference Elastic's official [logging](https://www.elastic.co/guide/en/elasticsearch/reference/current/logging.html) documentation for more details regarding a list of available configurations and [examples](https://github.com/elastic/elasticsearch/blob/master/qa/logging-config/custom-log4j2.properties) of how this configuration should look.
-
-`data_dir: </path/to/data/dir>` (**default**: `/var/data/elasticsearch`)
-- path on target host where data generated by the Elasticsearch service (e.g. indexed records) should be stored
-
-`logs_dir: </path/to/log/dir>` (**default**: `/var/log/elasticsearch`)
-- path on target host where logs generated by the Elasticsearch service should be stored
+See [here](https://github.com/apache/kafka/blob/trunk/config/log4j.properties) for an example configuration file and list of supported settings.
 
 #### Launch
 
@@ -153,7 +153,6 @@ _The following variables can be customized to manage the service's **systemd** s
 
 ```yaml
 custom_unit_properties:
-  Environment: "ES_HOME={{ install_dir }}"
   LimitNOFILE: infinity
 ```
 
