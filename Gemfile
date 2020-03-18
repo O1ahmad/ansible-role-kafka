@@ -9,6 +9,5 @@ group :integration do
   gem 'kitchen-ansible'
   gem 'kitchen-docker'
   gem 'kitchen-inspec'
-  gem 'rspec-retry'
   gem 'test-kitchen'
 end
