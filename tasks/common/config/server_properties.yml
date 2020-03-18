@@ -2,7 +2,7 @@
 - name: Create Kafka topic logs directory
   become: true
   file:
-    path: "{{ log_dirs }}"
+    path: "{{ server_properties['log.dirs']|default(server_properties.log.dirs)|default(log_dirs) }}"
     state: directory
     owner: "{{ kafka_user }}"
     group: "{{ kafka_user }}"
