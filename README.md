@@ -71,7 +71,7 @@ Configuration of `kafka` is expressed within 3 files:
 
 These files are located in a config directory, based on the location set for `kafka_home`.
 
-For additional details and to get an idea how each config should look, reference Elastic's official [configuration](https://www.elastic.co/guide/en/elasticsearch/reference/current/settings.html) documentation.
+For additional details and to get an idea how each config should look, reference Kafka's official [configuration](https://kafka.apache.org/documentation/#configuration) documentation.
 
 _The following variables can be customized to manage the location and content of these configuration files:_
 
@@ -99,7 +99,9 @@ A list of configurable settings can be found [here](https://kafka.apache.org/doc
 
 `jvm_options: <list-of-dicts>` **default**: `[]`
 
-- Kafka uses a set of environment variables to manage various aspects of its Java environment - see [here](http://kafka.apache.org/documentation.html#java) for more details. This role exposes management of these environment variables via a *jvm.options* configuration file located in the aforementioned configuration directory under `kafka_home`. The file consists of a line-delimited list of environment variable settings used to modify the behavior of Kafka's JVM.
+- Kafka uses a set of environment variables to manage various aspects of its Java environment - see [here](http://kafka.apache.org/documentation.html#java) for more details.
+
+This role exposes management of these environment variables via a *jvm.options* configuration file located in the aforementioned configuration directory under `kafka_home`. The file consists of a line-delimited list of environment variable settings used to modify the behavior of Kafka's JVM.
 
 While you should rarely need to change Java Virtual Machine (JVM) options; there are situations (e.g.insufficient heap size allocation) in which adjustments may be necessary. Each environment variable to be rendered in the file can be expressed as an entry in the `jvm_options` hash, with a list of dicts as values representing various supported flags/options.
 
@@ -125,9 +127,9 @@ While you should rarely need to change Java Virtual Machine (JVM) options; there
 
 - Kafka makes use of the Apache [log4j](https://logging.apache.org/log4j/2.x/) logging system for organizing and managing each of its main and sub-component logging facilities. As such, individual settings can be applied on a global or per-component basis by defining configuration settings associated with various aspects of the logging process. 
 
-By default, log4j loads a `log4j.properties` file, underneath Kafka's main `{{ kafka_home }}/config/` directory by default, which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
+By default, log4j loads a `log4j.properties` file, underneath Kafka's main `{{ kafka_home }}/config` directory, which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
 
-Each line to be rendered in the file can be expressed as an entry within a list of dicts, contained within `log4j_properties`, consisting of a hash containing an *optional* `comment` field and list of associated key-value pairs:
+Each line to be rendered in the file can be expressed as an entry within a list of dicts, contained within `log4j_properties`, consisting of a hash containing an *optional* `comment` field and list of associated key-value pairs encapsulated under a `settings` key root:
 
   ```yaml
   log4j2_properties:
