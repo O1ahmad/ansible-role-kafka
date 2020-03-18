@@ -14,8 +14,9 @@
     comment: Kafka service account
     name: "{{ kafka_user }}"
     group: "{{ kafka_user }}"
+    shell: "/sbin/nologin"
     system: true
-    create_home: true
+    create_home: false
   tags:
     - install
 
