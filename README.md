@@ -220,6 +220,7 @@ launch Kafka brokers connecting to existing remote Zookeeper cluster and customi
 ```
 
 update Kafka commit log directory and parameters:
+```
 - hosts: broker
   roles:
     - role: 0x0I.kafka
