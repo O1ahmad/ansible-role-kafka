@@ -57,7 +57,7 @@ _The following variables can be customized to control various aspects of this in
 - **archive**: compatible with both **tar and zip** formats, archived installation binaries can be obtained from local and remote compressed archives either from the official [download/releases](https://kafka.apache.org/downloads) site or those generated from development/custom sources.
 
 `kafka_home: </path/to/dir>` (**default**: `/opt/kafka`)
-- path on target host where the `kafka` binaries should be extracted to.
+- path on target host where the `kafka` binaries should be extracted to and configuration rendered.
 
 `archive_url: <path-or-url-to-archive>` (**default**: see `defaults/main.yml`)
 - address of a compressed **tar or zip** archive containing `kafka` binaries. This method technically supports installation of any available version of `kafka`. Links to official versions can be found [here](https://kafka.apache.org/downloads).
@@ -120,7 +120,7 @@ While you should rarely need to change Java Virtual Machine (JVM) options; there
 
 `log4j_properties: <list-of-dicts>` **default**: `[]`
 
-- Elasticsearch makes use of the Apache [log4j 2](https://logging.apache.org/log4j/2.x/) logging system for organizing and managing each of its main and sub-component logging facilities. As such, individual settings can be applied on a global or per-component basis by defining configuration settings associated with various aspects of the logging process. By default, log4j 2 loads a `log4j2.properties` file which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
+- Kafka makes use of the Apache [log4j 2](https://logging.apache.org/log4j/2.x/) logging system for organizing and managing each of its main and sub-component logging facilities. As such, individual settings can be applied on a global or per-component basis by defining configuration settings associated with various aspects of the logging process. By default, log4j 2 loads a `log4j2.properties` file which consists of line-delimited properties expressing a key-value pair representing a desired configuration.
 
 3 properties `${sys:es.logs.base_path}`, `${sys:es.logs.cluster_name}`, and `${sys:es.logs.node_name}` are exposed by Elasticsearch and can be referenced in the configuration file to determine the location of this log file and potentially others. The property **${sys:es.logs.base_path}** will resolve to the log directory, **${sys:es.logs.cluster_name}** will resolve to the cluster name *(used as the prefix of log filenames in the default configuration)*, and **${sys:es.logs.node_name}** will resolve to the node name *(if the node name is explicitly set)*.
 
@@ -144,15 +144,12 @@ Reference Elastic's official [logging](https://www.elastic.co/guide/en/elasticse
 
 #### Launch
 
-Running the `elasticsearch` search and analytics service along with its API server is accomplished utilizing the [systemd](https://www.freedesktop.org/wiki/Software/systemd/) service management tool for both *package* and *archive* installations. Launched as background processes or daemons subject to the configuration and execution potential provided by the underlying management framework, launch of `elasticsearch` can be set to adhere to system administrative policies right for your environment and organization.
+Running a `kafka` broker is accomplished utilizing the [systemd](https://www.freedesktop.org/wiki/Software/systemd/) service management tool for *archive* installations. Launched as background processes or daemons subject to the configuration and execution potential provided by the underlying management framework, launch of `kafka` can be set to adhere to system administrative policies right for your environment and organization.
 
 _The following variables can be customized to manage the service's **systemd** service unit definition and execution profile/policy:_
 
-`extra_run_args: <elasticsearch-cli-options>` (**default**: `[]`)
-- list of `elasticsearch` commandline arguments to pass to the binary at runtime for customizing launch. Supporting full expression of `elasticsearch`'s cli, this variable enables the launch to be customized according to the user's specification.
-
 `custom_unit_properties: <hash-of-systemd-service-settings>` (**default**: `[]`)
-- hash of settings used to customize the [Service] unit configuration and execution environment of the Elasticsearch **systemd** service.
+- hash of settings used to customize the [Service] unit configuration and execution environment of the Kafka **systemd** service.
 
 ```yaml
 custom_unit_properties:
@@ -169,7 +166,7 @@ Support for uninstalling and removing artifacts necessary for provisioning allow
 _The following variable(s) can be customized to manage this uninstall process:_
 
 `perform_uninstall: <true | false>` (**default**: `false`)
-- whether to uninstall and remove all artifacts and remnants of this `elasticsearch` installation on a target host (**see**: `handlers/main.yml` for details)
+- whether to uninstall and remove all artifacts and remnants of this `kafka` installation on a target host (**see**: `handlers/main.yml` for details)
 
 
 Dependencies
@@ -183,57 +180,96 @@ default example:
 ```
 - hosts: all
   roles:
-  - role: 0x0I.elasticsearch
+  - role: 0x0I.kafka
 ```
 
-install specific version of OS distribution native package with pre-defined defaults:
+install specific version of Kafka binaries with pre-defined defaults:
 ```
-- hosts: legacy-ES-cluster
+- hosts: legacy-kafka-broker
   roles:
-  - role: 0x0I.elasticsearch
+  - role: 0x0I.kafka
     vars:
         managed_configs: []
-        install_type: package
-        package_url: https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/rpm/elasticsearch/2.0.0/elasticsearch-2.0.0.rpm
-        package_checksum: https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/rpm/elasticsearch/2.0.0/elasticsearch-2.0.0.rpm.sha1
-        checksum_format: sha1
+        install_type: archive
+        archive_url: https://archive.apache.org/dist/kafka/1.0.0/kafka_2.12-1.0.0.tgz
 ```
 
-provision hybrid master/data node with customized data and logging directories:
+adjust broker identification details:
 ```
-- hosts: test-elasticsearch
+- hosts: my-broker
   roles:
-    - role: 0x0I.elasticsearch
+    - role: 0x0I.kafka
       vars:
-        managed_configs: ['elasticsearch_config']
-        config:
-          cluster.name: example-cluster
-          node.master: true
-          node.data: true
-          path:
-            data: /mnt/data/elasticsearch
-            logs: /mnt/logs/elasticsearch
+        managed_configs: ['server_properties']
+        server_properties:
+          broker.id: 12
+          advertised.host.name: my-broker.cluster.domain
 ```
 
-adjust JVM heap settings and enable verbose logging for cluster debugging/troubleshooting:
+launch Kafka brokers connecting to existing remote Zookeeper cluster and customize connection parameters:
 ```
-- hosts: elasticsearch
+- hosts: broker
   roles:
-    - role: 0x0I.elasticsearch
+    - role: 0x0I.kafka
       vars:
-        managed_configs: ['jvm_options', 'log4j2_properties']
+        managed_configs: ['server_properties']
+        server_properties:
+          zookeeper.connect: 111.22.33.4:2181
+          zookeeper.connection.timeout.ms: 30000
+          zookeeper.max.in.flight.requests: 30
+```
+
+update Kafka commit log directory and parameters:
+- hosts: broker
+  roles:
+    - role: 0x0I.kafka
+      vars:
+        managed_configs: ['server_properties']
+        log_dirs: /mnt/data/kafka # can be provided in place of server property below
+        server_properties:
+          log.dirs: /mnt/data/kafka
+          log.flush.interval.ms: 3000
+          log.retention.hours: 168
+          zookeeper.connect: zk1.cluster.domain:2181
+```
+
+adjust JVM settings for JMX metric collection and broker auditing:
+```
+- hosts: broker
+  roles:
+    - role: 0x0I.kafka
+      vars:
+        managed_configs: ['jvm_options']
         jvm_options:
-          - comment: adjust the min and max JVM heap size to handle increased output
-            arguments:
-              - '-Xms16g'
-              - '-Xmx16g'
-        log4j2_properties:
-          - comment: log action execution errors for easier debugging
+          kafka_jmx_opts:
+            - -Dcom.sun.management.jmxremote=true
+            - -Dcom.sun.management.jmxremote.port=9999
+            - -Dcom.sun.management.jmxremote.authenticate=false
+            - -Dcom.sun.management.jmxremote.ssl=false
+            - -Djava.net.preferIPv4Stack=true
+```
+
+increase log4j logging levels for troubleshooting/debugging:
+```
+- hosts: broker
+  roles:
+    - role: 0x0I.kafka
+      vars:
+        managed_configs: ['log4j_properties']
+        log4j_properties:
+          - comment: Set root logger level and log appenders
             settings:
-              - logger.action.name: org.elasticsearch.action
-                logger.action.level: debug
-        extra_run_args:
-          - '--verbose'
+              - log4j.rootLogger: DEBUG,stdout,kafkaAppender
+          - comment: Define stdout logger appender
+            settings:
+              - log4j.appender.stdout: org.apache.log4j.ConsoleAppender
+              - log4j.appender.stdout.layout: org.apache.log4j.PatternLayout
+          - comment: Define kafka logger appender
+            settings:
+              - log4j.appender.kafkaAppender: org.apache.log4j.DailyRollingFileAppender
+              - log4j.appender.kafkaAppender.DatePattern: "'.'yyyy-MM-dd-HH"
+              - log4j.appender.kafkaAppender.File: "${kafka.logs.dir}/server.log"
+              - log4j.appender.kafkaAppender.layout: org.apache.log4j.PatternLayout
 ```
 
 License
@@ -244,4 +280,4 @@ MIT
 Author Information
 ------------------
 
-This role was created in 2019 by O1.IO.
+This role was created in 2020 by O1.IO.
