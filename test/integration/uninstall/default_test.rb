@@ -1,23 +1,27 @@
-title "Elasticsearch service launch test suite"
+title "Kafka service launch test suite"
 
-describe file('/etc/systemd/system/elasticsearch.service') do
+describe file('/etc/systemd/system/kafka.service') do
   it { should_not exist }
 end
 
-describe service('elasticsearch') do
+describe service('kafka') do
   it { should_not be_installed }
   it { should_not be_enabled }
   it { should_not be_running }
 end
 
-describe directory('/opt/elasticsearch') do
+describe directory('/opt/kafka') do
   it { should_not exist }
 end
 
-describe directory('/var/data/elasticsearch') do
+describe directory('/mnt/data/kafka') do
   it { should_not exist }
 end
 
-describe directory('/var/log/elasticsearch') do
+describe user('kafka') do
+  it { should_not exist }
+end
+
+describe group('kafka') do
   it { should_not exist }
 end
