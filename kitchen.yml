@@ -37,9 +37,6 @@ platforms:
   - name: centos-7
     driver_config:
       <<: *default_driver_config
-  - name: centos-8
-    driver_config:
-      <<: *default_driver_config
   - name: fedora-30
     driver_config:
       <<: *default_driver_config
@@ -75,13 +72,6 @@ platforms:
   - name: ubuntu-19.04
     driver_config:
       <<: *default_driver_config
-      provision_command:
-        - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
-        - systemctl enable ssh.service
-  - name: debian-8
-    driver_config:
-      <<: *default_driver_config
-      run_command: /lib/systemd/systemd
       provision_command:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service

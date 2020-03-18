@@ -11,7 +11,6 @@ env:
   - OS_VERSION=ubuntu-1604
   - OS_VERSION=ubuntu-1804
   - OS_VERSION=ubuntu-1904
-  - OS_VERSION=debian-8
   - OS_VERSION=debian-9
 before_script:
   - sudo pip install ansible-lint yamllint
