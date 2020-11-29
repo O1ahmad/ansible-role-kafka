@@ -38,7 +38,7 @@ platforms:
   - name: centos-7
     driver_config:
       <<: *default_driver_config
-  - name: fedora-30
+  - name: fedora-32
     driver_config:
       <<: *default_driver_config
       provision_command:
@@ -48,7 +48,7 @@ platforms:
     provisioner:
       require_pip: true
       ansible_cfg_path: test/ansible.cfg
-  - name: fedora-31
+  - name: fedora-33
     driver_config:
       <<: *default_driver_config
       provision_command:
@@ -72,7 +72,7 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
         - apt install -y net-tools
-  - name: ubuntu-19.04
+  - name: ubuntu-20.04
     driver_config:
       <<: *default_driver_config
       provision_command:
